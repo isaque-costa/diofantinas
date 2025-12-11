@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Equações Diofantinas não lineares</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#f8f8f8, #ffffff);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1, h3 {
+    text-align: center;
+    margin-top: 0;
+  }
+
+  .card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 18px 22px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 18px;
+  }
+
+  .inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 8px;
+  }
+
+  label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .controls button {
+    padding: 5px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  button {
+    background: #007acc;
+    color: white;
+  }
+
+  button:hover { background: #005fa3; }
+
+  #copy, #clear {
+    background: #f0f0f0;
+    color: #333;
+    border: 1px solid #ccc;
+  }
+
+  #copy:hover, #clear:hover {
+    background: #e6e6e6;
+  }
+
+  .results {
+    max-height: 280px;
+    overflow-y: auto;
+    margin-top: 8px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 6px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    font-size: 0.88rem;
+  }
+
+  th {
+    background: #f9f9f9;
+    position: sticky;
+    top: 0;
+  }
+
+  .hint {
+    font-size: 0.78rem;
+    color: #555;
+    margin-top: -4px;
+    text-align: right;
+  }
+
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 8px;
+    font-size: 0.88rem;
+  }
+
+  .stats div {
+    text-align: center;
+  }
+
+  .stats span {
+    display: block;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 480px) {
+    .card {
+      padding: 14px 16px;
+    }
+    .controls {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Equações Diofantinas</h1>
+  <div class="inputs">
+    <div>
+      <label for="k">Valor de k</label>
+      <input id="k" type="number" min="1" value="4">
+    </div>
+
+    <div>
+      <label>Escolha a equação</label>
+      <div class="radio-group">
+        <label><input type="radio" name="solver" value="A" checked> xyz = k(x + y + z)</label>
+        <label><input type="radio" name="solver" value="B"> xyz = k(xy + xz + yz)</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="solve">Resolver</button>
+    <button id="copy">Copiar</button>
+    <button id="clear">Limpar</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Resultados (<span id="count">0</span>)</h3>
+  <p class="hint" id="time"></p>
+  <div class="results">
+    <table id="table">
+      <thead><tr><th>x</th><th>y</th><th>z</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" id="panelStats">
+  <h3>Valores mínimos e máximos</h3>
+  <div class="stats">
+    <div>
+      <p>x</p>
+      <span id="xRange">—</span>
+    </div>
+    <div>
+      <p>y</p>
+      <span id="yRange">—</span>
+    </div>
+    <div>
+      <p>z</p>
+      <span id="zRange">—</span>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+export function solveA(k){
+  const sol=[], xmax=Math.floor(Math.sqrt(3*k));
+  for(let x=1;x<=xmax;x++){
+    const ymax=Math.floor(3*k/x);
+    for(let y=x;y<=ymax;y++){
+      const n=k*(x+y), d=x*y-k;
+      if(d>0 && n%d===0){
+        const z=n/d;
+        if(z>=y) sol.push([x,y,z]); else break;
+      }
+    }
+  }
+  return sol;
+}
+export function solveB(k){
+  const sol=[], xmin=k+1, xmax=3*k;
+  for(let x=xmin;x<=xmax;x++){
+    const ymax=Math.floor((2*k*x)/(x-k));
+    for(let y=x;y<=ymax;y++){
+      const n=k*x*y, d=x*y-k*(x+y);
+      if(d>0 && n%d===0){
+        const z=n/d;
+        if(z>=y) sol.push([x,y,z]); else break;
+      }
+    }
+  }
+  return sol;
+}
+</script>
+
+<script>
+(async()=>{
+  const modURL=URL.createObjectURL(new Blob([document.querySelector('script[type="module"]').textContent],{type:'text/javascript'}));
+  const mod=await import(modURL);
+
+  const kIn=document.getElementById('k'),
+        radios=document.querySelectorAll('input[name="solver"]'),
+        solveBtn=document.getElementById('solve'),
+        copyBtn=document.getElementById('copy'),
+        clearBtn=document.getElementById('clear'),
+        tableBody=document.querySelector('#table tbody'),
+        countEl=document.getElementById('count'),
+        timeEl=document.getElementById('time'),
+        xRange=document.getElementById('xRange'),
+        yRange=document.getElementById('yRange'),
+        zRange=document.getElementById('zRange');
+
+  let lastSolutions=[];
+
+  function render(sols){
+    tableBody.innerHTML='';
+    sols.forEach(s=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${s[0]}</td><td>${s[1]}</td><td>${s[2]}</td>`;
+      tableBody.appendChild(tr);
+    });
+    countEl.textContent=sols.length;
+    updateRanges(sols);
+  }
+
+  function updateRanges(sols){
+    if(!sols.length){
+      xRange.textContent=yRange.textContent=zRange.textContent='—';
+      return;
+    }
+    const xs=sols.map(s=>s[0]);
+    const ys=sols.map(s=>s[1]);
+    const zs=sols.map(s=>s[2]);
+    xRange.textContent=`${Math.min(...xs)} — ${Math.max(...xs)}`;
+    yRange.textContent=`${Math.min(...ys)} — ${Math.max(...ys)}`;
+    zRange.textContent=`${Math.min(...zs)} — ${Math.max(...zs)}`;
+  }
+
+  solveBtn.onclick=()=>{
+    const k=+kIn.value;
+    if(!(k>0)) return alert('Digite um k positivo.');
+    const solver=[...radios].find(r=>r.checked).value;
+    timeEl.textContent='Calculando...';
+    setTimeout(()=>{
+      const t0=performance.now();
+      const sols=(solver==='A'?mod.solveA(k):mod.solveB(k));
+      const t1=performance.now();
+      lastSolutions=sols;
+      render(sols);
+      timeEl.textContent=`Tempo: ${((t1-t0)/1000).toFixed(3)} s`;
+    });
+  };
+
+  copyBtn.onclick=()=>{
+    if(!lastSolutions.length) return alert('Nada para copiar.');
+    navigator.clipboard.writeText(lastSolutions.map(r=>r.join('\t')).join('\n'));
+    copyBtn.textContent='Copiado!';
+    setTimeout(()=>copyBtn.textContent='Copiar',1500);
+  };
+
+  clearBtn.onclick=()=>{
+    tableBody.innerHTML='';
+    countEl.textContent='0';
+    lastSolutions=[];
+    timeEl.textContent='';
+    updateRanges([]);
+  };
+})();
+</script>
+
+</body>
+</html>
